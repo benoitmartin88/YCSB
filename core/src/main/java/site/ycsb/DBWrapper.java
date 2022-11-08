@@ -189,11 +189,11 @@ public class DBWrapper extends DB {
       return res;
     }
   }
-  public Status message(String tid, String dest) {
+  public Status message(String tid, String dest, String msg) {
     try (final TraceScope span = tracer.newScope(scopeStringMessage)) {
       long ist = measurements.getIntendedStartTimeNs();
       long st = System.nanoTime();
-      Status res = db.message(tid, dest);
+      Status res = db.message(tid, dest, msg);
       long en = System.nanoTime();
       measure("MESSAGE", res, ist, st, en);
       measurements.reportStatus("MESSAGE", res);

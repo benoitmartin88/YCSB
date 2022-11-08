@@ -154,7 +154,7 @@ public abstract class DB {
     return Status.NOT_IMPLEMENTED;
   }
 
-  public Status message(String tid, String dest) {
+  public Status message(String tid, String dest, String msg) {
     return Status.NOT_IMPLEMENTED;
   }
 

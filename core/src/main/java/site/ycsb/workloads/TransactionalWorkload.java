@@ -865,7 +865,8 @@ public class TransactionalWorkload extends Workload {
   public void doTransactionMessage(DB db, String tid) {
     // choose a random destination id
     long destId = nextMessageDestination();
-    db.message(tid, String.valueOf(destId));
+    String msg = generateRandomChars(fieldlengthgenerator.nextValue().longValue());
+    db.message(tid, String.valueOf(destId), msg);
   }
 
   public void doTransactionUpdate(DB db, String tid) {
@@ -952,5 +953,15 @@ public class TransactionalWorkload extends Workload {
       operationchooser.addValue(readmodifywriteproportion, "READMODIFYWRITE");
     }
     return operationchooser;
+  }
+
+  public static String generateRandomChars(long length) {
+    final String candidateChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890";
+    StringBuilder sb = new StringBuilder();
+    Random random = new Random();
+    for (int i = 0; i < length; ++i) {
+      sb.append(candidateChars.charAt(random.nextInt(candidateChars.length())));
+    }
+    return sb.toString();
   }
 }

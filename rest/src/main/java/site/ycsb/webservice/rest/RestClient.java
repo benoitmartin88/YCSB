@@ -251,16 +251,21 @@ public class RestClient extends DB {
     return Status.NOT_IMPLEMENTED;
   }
 
-  public Status message(String tid, String dest) {
+  public Status message(String tid, String dest, String msg) {
     final String messagePath = "message/";
     Map<String, ByteIterator> result = new HashMap<>();
-    String msg = "TODO";
 
     final String path = urlPrefix + messagePath + tid.concat("/") + dest.concat("/") + msg;
 
     int responseCode;
     try {
       responseCode = httpGet(path, result);
+
+//      // TODO: check result. Note: messages are sent on commit
+//      if(!result.get("response").toString().equals(msg)) {
+//        System.out.println("MESSAGE ERROR: "+ result.get("response").toString());
+//        return Status.UNEXPECTED_STATE;
+//      }
     } catch (Exception e) {
       responseCode = handleExceptions(e, path, HttpMethod.GET);
     }
