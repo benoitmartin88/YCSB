@@ -17,11 +17,7 @@
 
 package site.ycsb;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.Vector;
+import java.util.*;
 
 /**
  * A layer for accessing a database to be benchmarked. Each thread in the client
@@ -87,6 +83,10 @@ public abstract class DB {
    * @return The result of the operation.
    */
   public abstract Status read(String table, String key, Set<String> fields, Map<String, ByteIterator> result);
+  public Status read(String table, String key, Set<String> fields, Map<String, ByteIterator> result,
+                              String tid) {
+    return Status.NOT_IMPLEMENTED;
+  }
 
   /**
    * Perform a range scan for a set of records in the database. Each field/value pair from the result will be stored
@@ -112,6 +112,9 @@ public abstract class DB {
    * @return The result of the operation.
    */
   public abstract Status update(String table, String key, Map<String, ByteIterator> values);
+  public Status update(String table, String key, Map<String, ByteIterator> values, String tid) {
+    return Status.NOT_IMPLEMENTED;
+  }
 
   /**
    * Insert a record in the database. Any field/value pairs in the specified values HashMap will be written into the
@@ -123,6 +126,9 @@ public abstract class DB {
    * @return The result of the operation.
    */
   public abstract Status insert(String table, String key, Map<String, ByteIterator> values);
+  public Status insert(String table, String key, Map<String, ByteIterator> values, String tid) {
+    return Status.NOT_IMPLEMENTED;
+  }
 
   /**
    * Delete a record from the database.
@@ -132,4 +138,25 @@ public abstract class DB {
    * @return The result of the operation.
    */
   public abstract Status delete(String table, String key);
+  public Status delete(String table, String key, String tid) {
+    return Status.NOT_IMPLEMENTED;
+  }
+
+  public String prepare() {
+    return Status.NOT_IMPLEMENTED.getName();
+  }
+
+  public Status commit(String tid) {
+    return Status.NOT_IMPLEMENTED;
+  }
+
+  public Status abort(String tid) {
+    return Status.NOT_IMPLEMENTED;
+  }
+
+  public Status message(String tid, String dest) {
+    return Status.NOT_IMPLEMENTED;
+  }
+
+
 }

@@ -17,40 +17,21 @@
 
 package site.ycsb.webservice.rest;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.Vector;
-import java.util.zip.GZIPInputStream;
-
-import javax.ws.rs.HttpMethod;
-
 import org.apache.http.HttpEntity;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpDelete;
-import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpPut;
+import org.apache.http.client.methods.*;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
+import site.ycsb.*;
 
-import site.ycsb.ByteIterator;
-import site.ycsb.DB;
-import site.ycsb.DBException;
-import site.ycsb.Status;
-import site.ycsb.StringByteIterator;
+import javax.ws.rs.HttpMethod;
+import java.io.*;
+import java.util.*;
+import java.util.zip.GZIPInputStream;
 
 /**
  * Class responsible for making web service requests for benchmarking purpose.
@@ -117,16 +98,48 @@ public class RestClient extends DB {
   }
 
   @Override
+  public Status read(String table, String endpoint, Set<String> fields, Map<String, ByteIterator> result, String tid) {
+    int responseCode;
+    try {
+      responseCode = httpGet(urlPrefix + tid + '/' + endpoint, result);
+    } catch (Exception e) {
+      responseCode = handleExceptions(e, urlPrefix + tid + '/' + endpoint, HttpMethod.GET);
+    }
+    if (logEnabled) {
+      System.err.println(new StringBuilder("GET Request: ").append(urlPrefix).append(endpoint)
+          .append(" | Response Code: ").append(responseCode).toString());
+    }
+    return getStatus(responseCode);
+  }
+
+  @Override
   public Status insert(String table, String endpoint, Map<String, ByteIterator> values) {
     int responseCode;
     try {
-      responseCode = httpExecute(new HttpPost(urlPrefix + endpoint), values.get("data").toString());
+//      System.out.println("> values.get(\"data\")=" + values.get("data"));
+//      System.out.println("> values" + values);
+      responseCode = httpExecute(new HttpPost(urlPrefix + endpoint), values.toString());
     } catch (Exception e) {
       responseCode = handleExceptions(e, urlPrefix + endpoint, HttpMethod.POST);
     }
     if (logEnabled) {
       System.err.println(new StringBuilder("POST Request: ").append(urlPrefix).append(endpoint)
             .append(" | Response Code: ").append(responseCode).toString());
+    }
+    return getStatus(responseCode);
+  }
+
+  @Override
+  public Status insert(String table, String endpoint, Map<String, ByteIterator> values, String tid) {
+    int responseCode;
+    try {
+      responseCode = httpExecute(new HttpPost(urlPrefix + tid + '/' + endpoint), values.toString());
+    } catch (Exception e) {
+      responseCode = handleExceptions(e, urlPrefix + tid + '/' + endpoint, HttpMethod.POST);
+    }
+    if (logEnabled) {
+      System.err.println(new StringBuilder("POST Request: ").append(urlPrefix).append(endpoint)
+          .append(" | Response Code: ").append(responseCode).toString());
     }
     return getStatus(responseCode);
   }
@@ -147,10 +160,25 @@ public class RestClient extends DB {
   }
 
   @Override
+  public Status delete(String table, String endpoint, String tid) {
+    int responseCode;
+    try {
+      responseCode = httpDelete(urlPrefix + tid + '/' + endpoint);
+    } catch (Exception e) {
+      responseCode = handleExceptions(e, urlPrefix + tid + '/' + endpoint, HttpMethod.DELETE);
+    }
+    if (logEnabled) {
+      System.err.println(new StringBuilder("DELETE Request: ").append(urlPrefix).append(endpoint)
+          .append(" | Response Code: ").append(responseCode).toString());
+    }
+    return getStatus(responseCode);
+  }
+
+  @Override
   public Status update(String table, String endpoint, Map<String, ByteIterator> values) {
     int responseCode;
     try {
-      responseCode = httpExecute(new HttpPut(urlPrefix + endpoint), values.get("data").toString());
+      responseCode = httpExecute(new HttpPut(urlPrefix + endpoint), values.toString());
     } catch (Exception e) {
       responseCode = handleExceptions(e, urlPrefix + endpoint, HttpMethod.PUT);
     }
@@ -162,9 +190,85 @@ public class RestClient extends DB {
   }
 
   @Override
+  public Status update(String table, String endpoint, Map<String, ByteIterator> values, String tid) {
+    int responseCode;
+    try {
+      responseCode = httpExecute(new HttpPut(urlPrefix + tid + '/' + endpoint), values.toString());
+    } catch (Exception e) {
+      responseCode = handleExceptions(e, urlPrefix + tid + '/' + endpoint, HttpMethod.PUT);
+    }
+    if (logEnabled) {
+      System.err.println(new StringBuilder("PUT Request: ").append(urlPrefix).append(endpoint)
+          .append(" | Response Code: ").append(responseCode).toString());
+    }
+    return getStatus(responseCode);
+  }
+
+  @Override
   public Status scan(String table, String startkey, int recordcount, Set<String> fields,
       Vector<HashMap<String, ByteIterator>> result) {
     return Status.NOT_IMPLEMENTED;
+  }
+
+  @Override
+  public String prepare() {
+    final String prepare = "prepare";
+    Map<String, ByteIterator> result = new HashMap<>();
+
+    int responseCode;
+    try {
+      responseCode = httpGet(urlPrefix + prepare, result);
+    } catch (Exception e) {
+      responseCode = handleExceptions(e, urlPrefix + prepare, HttpMethod.GET);
+    }
+    if (logEnabled) {
+      System.err.println(new StringBuilder("GET Request: ").append(urlPrefix).append(prepare)
+          .append(" | Response Code: ").append(responseCode).toString());
+    }
+    return result.get("response").toString();
+  }
+
+  @Override
+  public Status commit(String tid) {
+    final String commit = "commit/";
+    Map<String, ByteIterator> result = new HashMap<>();
+
+    int responseCode;
+    try {
+      responseCode = httpGet(urlPrefix + commit + tid, result);
+    } catch (Exception e) {
+      responseCode = handleExceptions(e, urlPrefix + commit, HttpMethod.GET);
+    }
+    if (logEnabled) {
+      System.err.println(new StringBuilder("GET Request: ").append(urlPrefix).append(commit).append(tid)
+          .append(" | Response Code: ").append(responseCode).toString());
+    }
+    return getStatus(responseCode);
+  }
+
+  @Override
+  public Status abort(String tid) {
+    return Status.NOT_IMPLEMENTED;
+  }
+
+  public Status message(String tid, String dest) {
+    final String messagePath = "message/";
+    Map<String, ByteIterator> result = new HashMap<>();
+    String msg = "TODO";
+
+    final String path = urlPrefix + messagePath + tid.concat("/") + dest.concat("/") + msg;
+
+    int responseCode;
+    try {
+      responseCode = httpGet(path, result);
+    } catch (Exception e) {
+      responseCode = handleExceptions(e, path, HttpMethod.GET);
+    }
+    if (logEnabled) {
+      System.err.println(new StringBuilder("GET Request: ").append(path)
+          .append(" | Response Code: ").append(responseCode).toString());
+    }
+    return getStatus(responseCode);
   }
 
   // Maps HTTP status codes to YCSB status codes.
@@ -191,6 +295,8 @@ public class RestClient extends DB {
       System.err.println(new StringBuilder(method).append(" Request: ").append(url).append(" | ")
           .append(e.getClass().getName()).append(" occured | Error message: ")
           .append(e.getMessage()).toString());
+
+      e.printStackTrace();
     }
       
     if (e instanceof ClientProtocolException) {

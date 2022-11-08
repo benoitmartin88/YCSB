@@ -123,7 +123,8 @@ public class ClientThread implements Runnable {
             break;
           }
 
-          opsdone++;
+          int ops = Integer.parseInt(props.getProperty("operationspertransaction", "1"));
+          opsdone += ops;
 
           throttleNanos(startTimeNanos);
         }
